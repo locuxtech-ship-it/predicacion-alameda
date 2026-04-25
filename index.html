@@ -177,13 +177,6 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
       <input class="search-input" type="text" id="search-turno" placeholder="Buscar lugar o persona..." oninput="filtrarTurnos()">
       <div class="chips" id="chips-dias">
         <button class="chip active" onclick="setDia(this,'')">Todos</button>
-        <button class="chip" onclick="setDia(this,'Lunes')">Lunes</button>
-        <button class="chip" onclick="setDia(this,'Martes')">Martes</button>
-        <button class="chip" onclick="setDia(this,'Miercoles')">Miércoles</button>
-        <button class="chip" onclick="setDia(this,'Jueves')">Jueves</button>
-        <button class="chip" onclick="setDia(this,'Viernes')">Viernes</button>
-        <button class="chip" onclick="setDia(this,'Sábado')">Sábado</button>
-        <button class="chip" onclick="setDia(this,'Domingo')">Domingo</button>
       </div>
     </div>
     <div id="lista-turnos"><div class="loader"><div class="spinner"></div></div></div>
@@ -212,13 +205,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
       <div class="form-group">
         <label>Punto exhibidor *</label>
         <select id="nov-punto">
-          <option value="">Selecciona el punto...</option>
-          <option>CC Jardin Del Rio</option>
-          <option>Parque Acacias / Golondrina</option>
-          <option>Esquina conjunto Perdiz</option>
-          <option>Entrada auxiliar Conjunto Torcaza</option>
-          <option>Esquina Conjunto paloma</option>
-          <option>Paradero Frente a Conj. Alondra</option>
+          <option value="">Cargando puntos...</option>
         </select>
       </div>
       <div class="form-group">
@@ -325,6 +312,48 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 
 <script>
 const API = "https://script.google.com/macros/s/AKfycbxCHM3L2FYe3o3WiS8-nLobiD61oA_0Dz9GiV8igC85si4QAaSivqi_8TkIkyiXvYXsaA/exec";
+
+
+// ── DÍAS Y PUNTOS DINÁMICOS ────────────────────────────────
+function cargarDiasYPuntos() {
+  api({action:"getDiasYPuntos"}).then(function(res) {
+    if (!res.ok) return;
+
+    // Rebuild day chips
+    var chips = document.getElementById("chips-dias");
+    chips.innerHTML = '<button class="chip active" onclick="setDia(this,\'\')">Todos</button>';
+    res.dias.forEach(function(dia) {
+      var label = dia === "Miercoles" ? "Miércoles" : dia === "Sabado" ? "Sábado" : dia;
+      var btn = document.createElement("button");
+      btn.className = "chip";
+      btn.textContent = label;
+      btn.onclick = function(){ setDia(this, dia); };
+      chips.appendChild(btn);
+    });
+
+    // Rebuild punto select
+    var sel = document.getElementById("nov-punto");
+    sel.innerHTML = '<option value="">Selecciona el punto...</option>';
+    res.puntos.forEach(function(p) {
+      var opt = document.createElement("option");
+      opt.value = p;
+      opt.textContent = p;
+      sel.appendChild(opt);
+    });
+  }).catch(function() {
+    // fallback: keep defaults if API fails
+    var sel = document.getElementById("nov-punto");
+    if (sel.options.length <= 1) {
+      ["CC Jardin Del Rio","Parque Acacias / Golondrina","Esquina conjunto Perdiz",
+       "Entrada auxiliar Conjunto Torcaza","Esquina Conjunto paloma",
+       "Paradero Frente a Conj. Alondra"].forEach(function(p){
+        var opt = document.createElement("option");
+        opt.value = p; opt.textContent = p;
+        sel.appendChild(opt);
+      });
+    }
+  });
+}
 
 // ── Estado global ──────────────────────────────────────────
 var todosLosTurnos = [];
@@ -654,8 +683,9 @@ document.querySelectorAll(".modal-bg").forEach(function(m){
 // Fecha de hoy por defecto en el formulario
 document.getElementById("nov-fecha").valueAsDate = new Date();
 
-// Cargar turnos al inicio
+// Cargar turnos y configuración dinámica al inicio
 cargarTurnos();
+cargarDiasYPuntos();
 </script>
 </body>
 </html>
