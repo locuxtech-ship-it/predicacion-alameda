@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0F6E56">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Predicación · Alameda del Río</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --teal:#1D9E75;--teal-d:#0F6E56;--teal-dd:#085041;--teal-l:#E1F5EE;--teal-ll:#9FE1CB;
+  --amber:#BA7517;--amber-l:#FAEEDA;--amber-ll:#FAC775;
+  --coral:#993C1D;--coral-l:#FAECE7;
+  --gray:#5F5E5A;--gray-l:#F1EFE8;--gray-ll:#D3D1C7;
+  --white:#FFFFFF;--bg:#F7F6F2;
+  --text:#2C2C2A;--text2:#5F5E5A;--text3:#888780;
+  --radius:12px;--radius-sm:8px;--shadow:0 1px 3px rgba(0,0,0,.08);
+  --font:'DM Sans',sans-serif;
+}
+html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--text);font-size:16px}
+.app{display:flex;flex-direction:column;height:100%;max-width:430px;margin:0 auto;background:var(--white);box-shadow:0 0 40px rgba(0,0,0,.08)}
+
+/* HEADER */
+.header{background:var(--teal-d);color:white;padding:52px 16px 16px;display:flex;align-items:center;gap:12px;position:relative}
+.header-icon{width:40px;height:40px;min-width:40px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px}
+.header h1{font-size:16px;font-weight:600;line-height:1.2}
+.header p{font-size:12px;opacity:.75;margin-top:2px}
+.admin-btn{margin-left:auto;background:rgba(255,255,255,.15);border:none;color:white;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;font-family:var(--font);white-space:nowrap}
+
+/* NAV */
+.nav{display:flex;background:var(--white);border-bottom:1px solid var(--gray-ll);position:sticky;top:0;z-index:10}
+.nav-btn{flex:1;padding:12px 4px 10px;font-size:11px;border:none;background:none;cursor:pointer;color:var(--text3);display:flex;flex-direction:column;align-items:center;gap:4px;font-family:var(--font);transition:color .15s;border-bottom:2px solid transparent}
+.nav-btn.active{color:var(--teal-d);border-bottom-color:var(--teal-d)}
+.nav-icon{font-size:18px;line-height:1}
+
+/* SCREENS */
+.screen{display:none;flex:1;overflow-y:auto;padding-bottom:20px}
+.screen.active{display:block}
+
+/* SEARCH & FILTERS */
+.search-wrap{padding:12px 16px;background:var(--gray-l);border-bottom:1px solid var(--gray-ll)}
+.search-input{width:100%;padding:10px 14px;border:1px solid var(--gray-ll);border-radius:var(--radius-sm);background:var(--white);color:var(--text);font-family:var(--font);font-size:14px;outline:none}
+.search-input:focus{border-color:var(--teal)}
+.chips{display:flex;gap:6px;padding:10px 16px 0;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{padding:5px 14px;border-radius:20px;border:1px solid var(--gray-ll);font-size:12px;cursor:pointer;white-space:nowrap;background:var(--white);color:var(--text2);font-family:var(--font);transition:all .15s;flex-shrink:0}
+.chip.active{background:var(--teal-l);color:var(--teal-dd);border-color:var(--teal)}
+
+/* CARDS */
+.cards{padding:8px 16px}
+.card{background:var(--white);border:1px solid var(--gray-ll);border-radius:var(--radius);padding:14px;margin-bottom:8px;border-left:3px solid var(--gray-ll);transition:box-shadow .15s}
+.card:active{box-shadow:var(--shadow)}
+.card.disponible{border-left-color:var(--teal)}
+.card.asignado{border-left-color:var(--amber-ll)}
+.card.reunion{border-left-color:var(--gray-ll);opacity:.65}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.card-dia{font-weight:600;font-size:15px}
+.badge{font-size:10px;padding:3px 9px;border-radius:10px;font-weight:500;white-space:nowrap}
+.badge.disponible{background:var(--teal-l);color:var(--teal-dd)}
+.badge.asignado{background:var(--amber-l);color:var(--amber)}
+.badge.reunion{background:var(--gray-l);color:var(--gray)}
+.card-lugar{font-size:13px;color:var(--text2);margin-top:4px}
+.card-horario{font-size:13px;color:var(--teal-d);font-weight:500;margin-top:2px}
+.card-personas{font-size:13px;color:var(--text);margin-top:10px;padding-top:10px;border-top:1px solid var(--gray-l);display:flex;flex-direction:column;gap:4px}
+.persona-row{display:flex;align-items:center;gap:8px}
+.persona-avatar{width:26px;height:26px;min-width:26px;border-radius:50%;background:var(--teal-l);color:var(--teal-dd);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.persona-avatar.empty{background:var(--gray-l);color:var(--text3)}
+.persona-name{font-size:13px}
+.persona-empty{font-size:12px;color:var(--text3);font-style:italic}
+.btn-solicitar{width:100%;margin-top:10px;padding:9px;background:var(--teal-l);color:var(--teal-dd);border:1px solid var(--teal);border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:background .15s}
+.btn-solicitar:hover{background:var(--teal-ll)}
+
+/* EMPTY / LOADING */
+.empty{padding:48px 16px;text-align:center;color:var(--text3);font-size:14px}
+.empty-icon{font-size:36px;margin-bottom:12px}
+.loader{display:flex;justify-content:center;padding:40px}
+.spinner{width:28px;height:28px;border:2px solid var(--gray-ll);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* SECTION LABEL */
+.section-label{padding:12px 16px 4px;font-size:11px;color:var(--text3);font-weight:500;letter-spacing:.05em;text-transform:uppercase}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px}
+.stat{background:var(--gray-l);border-radius:var(--radius-sm);padding:14px}
+.stat-label{font-size:11px;color:var(--text3)}
+.stat-value{font-size:26px;font-weight:600;color:var(--text);margin-top:4px}
+.stat-value.teal{color:var(--teal-d)}
+
+/* FORM */
+.form-wrap{padding:16px}
+.form-title{font-size:15px;font-weight:600;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--gray-ll)}
+.form-group{margin-bottom:14px}
+.form-group label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px;font-weight:500}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1px solid var(--gray-ll);border-radius:var(--radius-sm);background:var(--white);color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--teal)}
+.form-group textarea{resize:vertical;min-height:80px;line-height:1.5}
+.radio-group{display:flex;gap:8px;flex-wrap:wrap}
+.radio-opt{display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;padding:7px 12px;border:1px solid var(--gray-ll);border-radius:var(--radius-sm);transition:all .15s}
+.radio-opt:has(input:checked){background:var(--teal-l);border-color:var(--teal);color:var(--teal-dd)}
+.radio-opt input{display:none}
+.btn-primary{width:100%;padding:13px;background:var(--teal-d);color:white;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:500;cursor:pointer;font-family:var(--font);margin-top:8px;transition:background .15s}
+.btn-primary:hover{background:var(--teal-dd)}
+.btn-primary:disabled{background:var(--gray);cursor:not-allowed}
+
+/* HISTORIAL CARDS */
+.hist-card{background:var(--gray-l);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px}
+.hist-top{display:flex;justify-content:space-between}
+.hist-nombre{font-weight:500;font-size:14px}
+.hist-fecha{font-size:12px;color:var(--text3)}
+.hist-lugar{font-size:12px;color:var(--teal-d);margin-top:3px}
+.hist-detalle{font-size:13px;color:var(--text2);margin-top:5px}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal-bg.hidden{display:none}
+.modal{background:var(--white);border-radius:var(--radius);padding:20px;width:100%;max-width:360px}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:14px}
+.modal input{width:100%;padding:10px 12px;border:1px solid var(--gray-ll);border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;outline:none;margin-bottom:12px}
+.modal input:focus{border-color:var(--teal)}
+.modal-btns{display:flex;gap:8px}
+.btn-sec{flex:1;padding:10px;background:var(--gray-l);color:var(--text2);border:none;border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;cursor:pointer}
+.btn-teal{flex:1;padding:10px;background:var(--teal-d);color:white;border:none;border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;cursor:pointer}
+
+/* ADMIN PANEL */
+.sol-card{border:1px solid var(--gray-ll);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;background:var(--white)}
+.sol-nombre{font-weight:600;font-size:14px}
+.sol-detalle{font-size:12px;color:var(--text2);margin-top:3px}
+.sol-estado{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500}
+.sol-estado.pendiente{background:var(--amber-l);color:var(--amber)}
+.sol-estado.aprobado{background:var(--teal-l);color:var(--teal-dd)}
+.sol-estado.rechazado{background:var(--coral-l);color:var(--coral)}
+.sol-actions{display:flex;gap:6px;margin-top:10px}
+.btn-aprobar{flex:1;padding:8px;background:var(--teal-l);color:var(--teal-dd);border:1px solid var(--teal);border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font)}
+.btn-rechazar{flex:1;padding:8px;background:var(--coral-l);color:var(--coral);border:1px solid #F0997B;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--teal-dd);color:white;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:500;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-icon">📋</div>
+    <div>
+      <h1>Predicación Pública</h1>
+      <p>Alameda del Río · Exhibidores</p>
+    </div>
+    <button class="admin-btn" onclick="abrirAdmin()">⚙ Admin</button>
+  </div>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showScreen('turnos',this)"><span class="nav-icon">🗓</span>Turnos</button>
+    <button class="nav-btn" onclick="showScreen('buscar',this)"><span class="nav-icon">🔍</span>Mi turno</button>
+    <button class="nav-btn" onclick="showScreen('novedad',this)"><span class="nav-icon">📝</span>Novedad</button>
+    <button class="nav-btn" onclick="showScreen('historial',this)"><span class="nav-icon">📊</span>Historial</button>
+  </nav>
+
+  <!-- SCREEN: TURNOS -->
+  <div id="screen-turnos" class="screen active">
+    <div class="search-wrap">
+      <input class="search-input" type="text" id="search-turno" placeholder="Buscar lugar o persona..." oninput="filtrarTurnos()">
+      <div class="chips" id="chips-dias">
+        <button class="chip active" onclick="setDia(this,'')">Todos</button>
+        <button class="chip" onclick="setDia(this,'Lunes')">Lunes</button>
+        <button class="chip" onclick="setDia(this,'Martes')">Martes</button>
+        <button class="chip" onclick="setDia(this,'Miercoles')">Miércoles</button>
+        <button class="chip" onclick="setDia(this,'Jueves')">Jueves</button>
+        <button class="chip" onclick="setDia(this,'Viernes')">Viernes</button>
+        <button class="chip" onclick="setDia(this,'Sábado')">Sábado</button>
+        <button class="chip" onclick="setDia(this,'Domingo')">Domingo</button>
+      </div>
+    </div>
+    <div id="lista-turnos"><div class="loader"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- SCREEN: BUSCAR -->
+  <div id="screen-buscar" class="screen">
+    <div class="search-wrap">
+      <input class="search-input" type="text" id="search-nombre" placeholder="Escribe tu nombre..." oninput="buscarPersona()">
+    </div>
+    <div id="resultado-busqueda" class="empty"><div class="empty-icon">🔍</div>Escribe tu nombre para ver tus turnos asignados</div>
+  </div>
+
+  <!-- SCREEN: NOVEDAD -->
+  <div id="screen-novedad" class="screen">
+    <div class="form-wrap">
+      <div class="form-title">📝 Registrar novedad del turno</div>
+      <div class="form-group">
+        <label>Nombre del publicador *</label>
+        <input type="text" id="nov-nombre" placeholder="Tu nombre completo">
+      </div>
+      <div class="form-group">
+        <label>Fecha del turno *</label>
+        <input type="date" id="nov-fecha">
+      </div>
+      <div class="form-group">
+        <label>Punto exhibidor *</label>
+        <select id="nov-punto">
+          <option value="">Selecciona el punto...</option>
+          <option>CC Jardin Del Rio</option>
+          <option>Parque Acacias / Golondrina</option>
+          <option>Esquina conjunto Perdiz</option>
+          <option>Entrada auxiliar Conjunto Torcaza</option>
+          <option>Esquina Conjunto paloma</option>
+          <option>Paradero Frente a Conj. Alondra</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Horario</label>
+        <select id="nov-horario">
+          <option value="">Selecciona horario...</option>
+          <option>6:00 - 8:00 AM</option>
+          <option>6:30 - 8:30 AM</option>
+          <option>10:00 AM - 12:00 PM</option>
+          <option>4:00 - 6:00 PM</option>
+          <option>6:00 - 8:00 PM</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>¿Se cumplió el turno?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="cumplido" value="Sí"> Sí, se cumplió</label>
+          <label class="radio-opt"><input type="radio" name="cumplido" value="No"> No se cumplió</label>
+          <label class="radio-opt"><input type="radio" name="cumplido" value="Parcial"> Parcial</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Conversaciones iniciadas</label>
+        <input type="number" id="nov-conversaciones" min="0" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>¿Arreglo para curso bíblico?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="curso" value="Sí"> Sí</label>
+          <label class="radio-opt"><input type="radio" name="curso" value="No"> No</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Novedades y observaciones</label>
+        <textarea id="nov-detalle" placeholder="Experiencias, material entregado, situaciones de seguridad..."></textarea>
+      </div>
+      <button class="btn-primary" id="btn-enviar-novedad" onclick="enviarNovedad()">Enviar registro</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: HISTORIAL -->
+  <div id="screen-historial" class="screen">
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-label">Registros totales</div><div class="stat-value teal" id="st-total">—</div></div>
+      <div class="stat"><div class="stat-label">Participantes</div><div class="stat-value" id="st-partic">68</div></div>
+      <div class="stat"><div class="stat-label">Turnos asignados</div><div class="stat-value" id="st-asig">—</div></div>
+      <div class="stat"><div class="stat-label">Turnos disponibles</div><div class="stat-value teal" id="st-disp">—</div></div>
+    </div>
+    <div class="section-label">Últimas novedades registradas</div>
+    <div class="cards" id="lista-historial"><div class="loader"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- SCREEN: ADMIN (oculta, se activa con clave) -->
+  <div id="screen-admin" class="screen">
+    <div class="section-label">Solicitudes de turnos</div>
+    <div class="cards" id="lista-solicitudes"><div class="loader"><div class="spinner"></div></div></div>
+  </div>
+
+</div><!-- .app -->
+
+<!-- MODAL SOLICITAR TURNO -->
+<div class="modal-bg hidden" id="modal-solicitar">
+  <div class="modal">
+    <h3>Solicitar turno</h3>
+    <p style="font-size:13px;color:#5F5E5A;margin-bottom:14px" id="modal-turno-info"></p>
+    <input type="text" id="modal-nombre" placeholder="Tu nombre completo">
+    <div class="modal-btns">
+      <button class="btn-sec" onclick="cerrarModal('modal-solicitar')">Cancelar</button>
+      <button class="btn-teal" onclick="confirmarSolicitud()">Enviar solicitud</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADMIN LOGIN -->
+<div class="modal-bg hidden" id="modal-admin">
+  <div class="modal">
+    <h3>⚙ Panel de administrador</h3>
+    <input type="password" id="admin-clave" placeholder="Clave de administrador">
+    <div class="modal-btns">
+      <button class="btn-sec" onclick="cerrarModal('modal-admin')">Cancelar</button>
+      <button class="btn-teal" onclick="loginAdmin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbxCHM3L2FYe3o3WiS8-nLobiD61oA_0Dz9GiV8igC85si4QAaSivqi_8TkIkyiXvYXsaA/exec";
+
+// ── Estado global ──────────────────────────────────────────
+var todosLosTurnos = [];
+var filtrosDia = "";
+var turnoSeleccionado = null;
+var adminClave = "";
+var novedadesCache = [];
+
+// ── Utilidades ─────────────────────────────────────────────
+function toast(msg, dur) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(function(){ t.classList.remove("show"); }, dur || 3000);
+}
+
+function loader(id) {
+  document.getElementById(id).innerHTML = '<div class="loader"><div class="spinner"></div></div>';
+}
+
+function api(params) {
+  var qs = Object.keys(params).map(function(k){ return k+"="+encodeURIComponent(params[k]); }).join("&");
+  return fetch(API + "?" + qs).then(function(r){ return r.json(); });
+}
+
+function apiPost(body) {
+  return fetch(API, {method:"POST", body:JSON.stringify(body)}).then(function(r){ return r.json(); });
+}
+
+function initials(name) {
+  if (!name) return "?";
+  var parts = name.trim().split(" ");
+  return (parts[0][0] + (parts[1] ? parts[1][0] : "")).toUpperCase();
+}
+
+// ── Navegación ─────────────────────────────────────────────
+function showScreen(id, btn) {
+  document.querySelectorAll(".screen").forEach(function(s){ s.classList.remove("active"); });
+  document.querySelectorAll(".nav-btn").forEach(function(b){ b.classList.remove("active"); });
+  document.getElementById("screen-" + id).classList.add("active");
+  if (btn) btn.classList.add("active");
+  if (id === "historial" && novedadesCache.length === 0) cargarHistorial();
+}
+
+// ── SCREEN TURNOS ──────────────────────────────────────────
+function cargarTurnos() {
+  api({action:"getTurnos"}).then(function(res){
+    if (!res.ok) { document.getElementById("lista-turnos").innerHTML = '<div class="empty">Error cargando turnos</div>'; return; }
+    todosLosTurnos = res.data;
+    actualizarStats();
+    renderTurnos(todosLosTurnos);
+  }).catch(function(){
+    document.getElementById("lista-turnos").innerHTML = '<div class="empty">Sin conexión. Verifica tu internet.</div>';
+  });
+}
+
+function renderTurnos(lista) {
+  var cont = document.getElementById("lista-turnos");
+  if (!lista.length) { cont.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>No hay turnos para mostrar</div>'; return; }
+  cont.innerHTML = lista.map(function(t){
+    var tipo = t.estado || "disponible";
+    var badgeTxt = tipo === "disponible" ? "Disponible" : tipo === "reunion" ? "Reunión" : "Asignado";
+    var p1html = t.persona_1
+      ? '<div class="persona-row"><div class="persona-avatar">' + initials(t.persona_1) + '</div><span class="persona-name">' + t.persona_1 + '</span></div>'
+      : '<div class="persona-row"><div class="persona-avatar empty">?</div><span class="persona-empty">Sin asignar</span></div>';
+    var p2html = t.persona_2
+      ? '<div class="persona-row"><div class="persona-avatar">' + initials(t.persona_2) + '</div><span class="persona-name">' + t.persona_2 + '</span></div>'
+      : '<div class="persona-row"><div class="persona-avatar empty">?</div><span class="persona-empty">Sin asignar</span></div>';
+    var btnSol = tipo === "disponible"
+      ? '<button class="btn-solicitar" onclick=\'abrirSolicitar(' + JSON.stringify(t) + ')\'>Solicitar este turno</button>'
+      : "";
+    return '<div class="card ' + tipo + '">'
+      + '<div class="card-top"><span class="card-dia">' + t.dia + '</span><span class="badge ' + tipo + '">' + badgeTxt + '</span></div>'
+      + '<div class="card-lugar">📍 ' + t.lugar + '</div>'
+      + '<div class="card-horario">⏰ ' + t.horario + '</div>'
+      + (tipo !== "reunion" ? '<div class="card-personas">' + p1html + p2html + '</div>' : '')
+      + btnSol
+      + '</div>';
+  }).join("");
+}
+
+function setDia(el, dia) {
+  document.querySelectorAll(".chip").forEach(function(c){ c.classList.remove("active"); });
+  el.classList.add("active");
+  filtrosDia = dia;
+  filtrarTurnos();
+}
+
+function filtrarTurnos() {
+  var q = document.getElementById("search-turno").value.toLowerCase();
+  var lista = filtrosDia ? todosLosTurnos.filter(function(t){ return t.dia === filtrosDia; }) : todosLosTurnos;
+  if (q) lista = lista.filter(function(t){
+    return (t.lugar||"").toLowerCase().includes(q)
+        || (t.persona_1||"").toLowerCase().includes(q)
+        || (t.persona_2||"").toLowerCase().includes(q)
+        || (t.dia||"").toLowerCase().includes(q);
+  });
+  renderTurnos(lista);
+}
+
+// ── SCREEN BUSCAR ──────────────────────────────────────────
+var buscarTimer = null;
+function buscarPersona() {
+  clearTimeout(buscarTimer);
+  var q = document.getElementById("search-nombre").value.trim();
+  var cont = document.getElementById("resultado-busqueda");
+  if (q.length < 3) {
+    cont.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div>Escribe al menos 3 letras de tu nombre</div>';
+    return;
+  }
+  cont.innerHTML = '<div class="loader"><div class="spinner"></div></div>';
+  buscarTimer = setTimeout(function(){
+    api({action:"buscarPersona", nombre:q}).then(function(res){
+      if (!res.ok || !res.data.length) {
+        cont.innerHTML = '<div class="empty"><div class="empty-icon">😕</div>No encontramos turnos para "' + q + '"</div>';
+        return;
+      }
+      cont.innerHTML = '<div class="section-label">Tus turnos asignados</div><div class="cards">'
+        + res.data.map(function(t){
+            var p1 = t.persona_1 ? '<div class="persona-row"><div class="persona-avatar">' + initials(t.persona_1) + '</div><span class="persona-name">' + t.persona_1 + '</span></div>' : '';
+            var p2 = t.persona_2 ? '<div class="persona-row"><div class="persona-avatar">' + initials(t.persona_2) + '</div><span class="persona-name">' + t.persona_2 + '</span></div>' : '';
+            return '<div class="card asignado">'
+              + '<div class="card-top"><span class="card-dia">' + t.dia + '</span><span class="badge asignado">Tu turno</span></div>'
+              + '<div class="card-lugar">📍 ' + t.lugar + '</div>'
+              + '<div class="card-horario">⏰ ' + t.horario + '</div>'
+              + '<div class="card-personas">' + p1 + p2 + '</div>'
+              + '</div>';
+          }).join("")
+        + '</div>';
+    });
+  }, 400);
+}
+
+// ── SCREEN NOVEDAD ─────────────────────────────────────────
+function enviarNovedad() {
+  var nombre = document.getElementById("nov-nombre").value.trim();
+  var fecha  = document.getElementById("nov-fecha").value;
+  var punto  = document.getElementById("nov-punto").value;
+  var horario= document.getElementById("nov-horario").value;
+  var cumplido = document.querySelector('input[name="cumplido"]:checked');
+  var conv   = document.getElementById("nov-conversaciones").value;
+  var curso  = document.querySelector('input[name="curso"]:checked');
+  var detalle= document.getElementById("nov-detalle").value.trim();
+
+  if (!nombre || !fecha || !punto) { toast("Completa los campos obligatorios (*)"); return; }
+
+  var btn = document.getElementById("btn-enviar-novedad");
+  btn.disabled = true; btn.textContent = "Enviando...";
+
+  apiPost({
+    action:"registrarNovedad",
+    fecha: fecha, publicador: nombre, punto: punto, horario: horario,
+    cumplido: cumplido ? cumplido.value : "",
+    conversaciones: conv || "0",
+    curso_biblico: curso ? curso.value : "",
+    detalle: detalle
+  }).then(function(res){
+    btn.disabled = false; btn.textContent = "Enviar registro";
+    if (res.ok) {
+      toast("✓ Novedad registrada correctamente");
+      document.getElementById("nov-nombre").value = "";
+      document.getElementById("nov-fecha").value = "";
+      document.getElementById("nov-punto").value = "";
+      document.getElementById("nov-horario").value = "";
+      document.getElementById("nov-conversaciones").value = "";
+      document.getElementById("nov-detalle").value = "";
+      document.querySelectorAll('input[name="cumplido"], input[name="curso"]').forEach(function(r){ r.checked = false; });
+      novedadesCache = [];
+    } else {
+      toast("Error: " + res.error);
+    }
+  }).catch(function(){
+    btn.disabled = false; btn.textContent = "Enviar registro";
+    toast("Sin conexión. Intenta de nuevo.");
+  });
+}
+
+// ── SCREEN HISTORIAL ───────────────────────────────────────
+function cargarHistorial() {
+  api({action:"getTurnos"}).then(function(res){
+    if (res.ok) {
+      var asig = res.data.filter(function(t){ return t.estado==="asignado"; }).length;
+      var disp = res.data.filter(function(t){ return t.estado==="disponible"; }).length;
+      document.getElementById("st-asig").textContent = asig;
+      document.getElementById("st-disp").textContent = disp;
+    }
+  });
+  // Mostrar novedades recientes desde caché o generar muestra
+  var cont = document.getElementById("lista-historial");
+  cont.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>Los registros de novedades se muestran aquí después de enviarlos</div>';
+  document.getElementById("st-total").textContent = "1228+";
+}
+
+function actualizarStats() {
+  var asig = todosLosTurnos.filter(function(t){ return t.estado==="asignado"; }).length;
+  var disp = todosLosTurnos.filter(function(t){ return t.estado==="disponible"; }).length;
+  document.getElementById("st-asig").textContent = asig;
+  document.getElementById("st-disp").textContent = disp;
+}
+
+// ── SOLICITAR TURNO ────────────────────────────────────────
+function abrirSolicitar(turno) {
+  turnoSeleccionado = turno;
+  document.getElementById("modal-turno-info").textContent = turno.dia + " · " + turno.horario + " · " + turno.lugar;
+  document.getElementById("modal-nombre").value = "";
+  document.getElementById("modal-solicitar").classList.remove("hidden");
+}
+
+function confirmarSolicitud() {
+  var nombre = document.getElementById("modal-nombre").value.trim();
+  if (!nombre) { toast("Escribe tu nombre"); return; }
+  apiPost({action:"solicitarTurno", nombre:nombre, turno_id: String(turnoSeleccionado.id)})
+    .then(function(res){
+      cerrarModal("modal-solicitar");
+      toast(res.ok ? "✓ " + res.mensaje : "Error: " + res.error, 4000);
+    }).catch(function(){ toast("Sin conexión"); });
+}
+
+// ── ADMIN ──────────────────────────────────────────────────
+function abrirAdmin() {
+  if (adminClave) { showScreen("admin", null); cargarSolicitudes(); return; }
+  document.getElementById("admin-clave").value = "";
+  document.getElementById("modal-admin").classList.remove("hidden");
+}
+
+function loginAdmin() {
+  var clave = document.getElementById("admin-clave").value.trim();
+  if (!clave) return;
+  api({action:"getSolicitudes", clave:clave}).then(function(res){
+    cerrarModal("modal-admin");
+    if (res.ok) {
+      adminClave = clave;
+      showScreen("admin", null);
+      renderSolicitudes(res.data);
+    } else {
+      toast("Clave incorrecta");
+    }
+  });
+}
+
+function cargarSolicitudes() {
+  loader("lista-solicitudes");
+  api({action:"getSolicitudes", clave:adminClave}).then(function(res){
+    if (res.ok) renderSolicitudes(res.data);
+  });
+}
+
+function renderSolicitudes(lista) {
+  var cont = document.getElementById("lista-solicitudes");
+  if (!lista.length) { cont.innerHTML = '<div class="empty"><div class="empty-icon">✅</div>No hay solicitudes pendientes</div>'; return; }
+  var pendientes = lista.filter(function(s){ return s.estado === "pendiente"; });
+  var resto = lista.filter(function(s){ return s.estado !== "pendiente"; });
+  var html = "";
+  if (pendientes.length) {
+    html += '<div class="section-label" style="padding-top:0">Pendientes (' + pendientes.length + ')</div>';
+    html += pendientes.map(function(s){ return solCard(s); }).join("");
+  }
+  if (resto.length) {
+    html += '<div class="section-label">Procesadas</div>';
+    html += resto.slice(0,10).map(function(s){ return solCard(s); }).join("");
+  }
+  cont.innerHTML = html;
+}
+
+function solCard(s) {
+  var fecha = s.timestamp ? s.timestamp.substring(0,10) : "";
+  var acciones = s.estado === "pendiente"
+    ? '<div class="sol-actions">'
+      + '<button class="btn-aprobar" onclick=\'gestionarSol("' + s.id + '","aprobado")\'>✓ Aprobar</button>'
+      + '<button class="btn-rechazar" onclick=\'gestionarSol("' + s.id + '","rechazado")\'>✗ Rechazar</button>'
+      + '</div>' : "";
+  return '<div class="sol-card">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center">'
+    + '<span class="sol-nombre">' + s.nombre + '</span>'
+    + '<span class="sol-estado ' + s.estado + '">' + s.estado + '</span>'
+    + '</div>'
+    + '<div class="sol-detalle">' + s.dia + ' · ' + s.horario + '</div>'
+    + '<div class="sol-detalle" style="color:#1D9E75">📍 ' + s.lugar + '</div>'
+    + (fecha ? '<div class="sol-detalle">Solicitado: ' + fecha + '</div>' : '')
+    + acciones
+    + '</div>';
+}
+
+function gestionarSol(id, estado) {
+  api({action:"aprobarSolicitud", clave:adminClave, solicitud_id:id, estado:estado})
+    .then(function(res){
+      toast(res.ok ? "✓ Solicitud " + estado : "Error: " + res.error);
+      if (res.ok) { cargarSolicitudes(); cargarTurnos(); }
+    });
+}
+
+// ── MODALES ────────────────────────────────────────────────
+function cerrarModal(id) {
+  document.getElementById(id).classList.add("hidden");
+}
+document.querySelectorAll(".modal-bg").forEach(function(m){
+  m.addEventListener("click", function(e){ if (e.target === m) m.classList.add("hidden"); });
+});
+
+// Fecha de hoy por defecto en el formulario
+document.getElementById("nov-fecha").valueAsDate = new Date();
+
+// Cargar turnos al inicio
+cargarTurnos();
+</script>
+</body>
+</html>
