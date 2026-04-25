@@ -76,6 +76,9 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 
 .btn-liberar{width:100%;margin-top:10px;padding:9px;background:#FAECE7;color:#993C1D;border:1px solid #F0997B;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:background .15s}
 .btn-liberar:hover{background:#F5C9BB}
+.btn-editar{flex:1;padding:8px;background:#F1EFE8;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);transition:background .15s}
+.btn-editar:hover{background:#D3D1C7}
+
 
 
 /* EMPTY / LOADING */
@@ -140,6 +143,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .sol-tipo{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
 .sol-tipo.liberacion{background:#FAECE7;color:#993C1D}
 .sol-tipo.asignacion{background:var(--teal-l);color:var(--teal-dd)}
+.sol-tipo.edicion{background:#F1EFE8;color:#5F5E5A}
 .sol-estado.rechazado{background:var(--coral-l);color:var(--coral)}
 .sol-actions{display:flex;gap:6px;margin-top:10px}
 .btn-aprobar{flex:1;padding:8px;background:var(--teal-l);color:var(--teal-dd);border:1px solid var(--teal);border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font)}
@@ -271,7 +275,10 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
   <div class="modal">
     <h3>Solicitar turno</h3>
     <p style="font-size:13px;color:#5F5E5A;margin-bottom:14px" id="modal-turno-info"></p>
-    <input type="text" id="modal-nombre" placeholder="Tu nombre completo">
+    <label style="font-size:12px;color:#5F5E5A;font-weight:500;display:block;margin-bottom:4px">Participante 1 *</label>
+    <input type="text" id="modal-p1" placeholder="Nombre completo del participante 1" style="margin-bottom:10px">
+    <label style="font-size:12px;color:#5F5E5A;font-weight:500;display:block;margin-bottom:4px">Participante 2 *</label>
+    <input type="text" id="modal-p2" placeholder="Nombre completo del participante 2" style="margin-bottom:12px">
     <div class="modal-btns">
       <button class="btn-sec" onclick="cerrarModal('modal-solicitar')">Cancelar</button>
       <button class="btn-teal" onclick="confirmarSolicitud()">Enviar solicitud</button>
@@ -291,6 +298,24 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
   </div>
 </div>
 
+
+
+<!-- MODAL EDITAR PARTICIPANTE -->
+<div class="modal-bg hidden" id="modal-editar">
+  <div class="modal">
+    <h3>&#9999; Cambiar participante</h3>
+    <p style="font-size:13px;color:#5F5E5A;margin-bottom:6px" id="modal-editar-info"></p>
+    <p style="font-size:12px;color:#BA7517;background:#FAEEDA;padding:8px 10px;border-radius:8px;margin-bottom:14px">
+      El administrador revisara el cambio antes de aplicarlo.
+    </p>
+    <label style="font-size:12px;color:#5F5E5A;font-weight:500;display:block;margin-bottom:4px" id="modal-editar-label">Nuevo nombre</label>
+    <input type="text" id="modal-editar-nuevo" placeholder="Nombre completo del nuevo participante">
+    <div class="modal-btns" style="margin-top:12px">
+      <button class="btn-sec" onclick="cerrarModal('modal-editar')">Cancelar</button>
+      <button class="btn-teal" onclick="confirmarEdicion()">Enviar cambio</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL LIBERAR TURNO -->
 <div class="modal-bg hidden" id="modal-liberar">
@@ -425,12 +450,20 @@ function renderTurnos(lista) {
     var btnSol = tipo === "disponible"
       ? '<button class="btn-solicitar" onclick=\'abrirSolicitar(' + JSON.stringify(t) + ')\'>Solicitar este turno</button>'
       : "";
+    var tData = JSON.stringify(t).replace(/'/g, "&#39;");
+    var btnEditar = tipo === "asignado"
+      ? '<div style="display:flex;gap:6px;margin-top:10px">'
+        + '<button class="btn-editar" onclick="abrirEditar(JSON.parse(this.dataset.t),1)" data-t=\'' + tData + '\'>&#9999; Editar P1</button>'
+        + '<button class="btn-editar" onclick="abrirEditar(JSON.parse(this.dataset.t),2)" data-t=\'' + tData + '\'>&#9999; Editar P2</button>'
+        + '</div>'
+      : "";
     return '<div class="card ' + tipo + '">'
       + '<div class="card-top"><span class="card-dia">' + t.dia + '</span><span class="badge ' + tipo + '">' + badgeTxt + '</span></div>'
       + '<div class="card-lugar">📍 ' + t.lugar + '</div>'
       + '<div class="card-horario">⏰ ' + t.horario + '</div>'
       + (tipo !== "reunion" ? '<div class="card-personas">' + p1html + p2html + '</div>' : '')
       + btnSol
+      + (tipo === 'asignado' ? btnEditar : '')
       + '</div>';
   }).join("");
 }
@@ -564,15 +597,53 @@ function abrirSolicitar(turno) {
 }
 
 function confirmarSolicitud() {
-  var nombre = document.getElementById("modal-nombre").value.trim();
-  if (!nombre) { toast("Escribe tu nombre"); return; }
-  apiPost({action:"solicitarTurno", nombre:nombre, turno_id: String(turnoSeleccionado.id)})
+  var p1 = document.getElementById("modal-p1").value.trim();
+  var p2 = document.getElementById("modal-p2").value.trim();
+  if (!p1) { toast("Escribe el nombre del Participante 1"); return; }
+  if (!p2) { toast("Escribe el nombre del Participante 2"); return; }
+  apiPost({action:"solicitarTurno", persona_1:p1, persona_2:p2, turno_id: String(turnoSeleccionado.id)})
     .then(function(res){
       cerrarModal("modal-solicitar");
+      if (res.ok) {
+        document.getElementById("modal-p1").value = "";
+        document.getElementById("modal-p2").value = "";
+      }
       toast(res.ok ? "✓ " + res.mensaje : "Error: " + res.error, 4000);
     }).catch(function(){ toast("Sin conexión"); });
 }
 
+
+
+// -- EDITAR PARTICIPANTE -------------------------------------------
+var turnoAEditar = null;
+var slotAEditar  = 1;
+
+function abrirEditar(turno, slot) {
+  turnoAEditar = turno;
+  slotAEditar  = slot;
+  var nombreActual = slot === 1 ? turno.persona_1 : turno.persona_2;
+  document.getElementById("modal-editar-info").textContent =
+    turno.dia + " - " + turno.horario + " - " + turno.lugar;
+  document.getElementById("modal-editar-label").textContent =
+    "Nuevo nombre para Participante " + slot + " (actual: " + (nombreActual || "vacío") + ")";
+  document.getElementById("modal-editar-nuevo").value = "";
+  document.getElementById("modal-editar").classList.remove("hidden");
+}
+
+function confirmarEdicion() {
+  var nuevo = document.getElementById("modal-editar-nuevo").value.trim();
+  if (!nuevo) { toast("Escribe el nuevo nombre"); return; }
+  api({
+    action: "editarParticipante",
+    turno_id: String(turnoAEditar.id),
+    slot: String(slotAEditar),
+    nuevo: nuevo
+  }).then(function(res){
+    cerrarModal("modal-editar");
+    toast(res.ok ? "✓ " + res.mensaje : "Error: " + res.error, 4500);
+    if (res.ok) cargarTurnos();
+  }).catch(function(){ toast("Sin conexión"); });
+}
 
 // ── LIBERAR TURNO ──────────────────────────────────────────
 var turnoALiberar = null;
@@ -653,7 +724,7 @@ function solCard(s) {
     + '<div style="display:flex;justify-content:space-between;align-items:center">'
     + '<span class="sol-nombre">' + s.nombre + '</span>'
     + '<div style="display:flex;gap:6px;align-items:center">'
-    + '<span class="sol-tipo ' + (s.tipo||"asignacion") + '">' + (s.tipo==="liberacion" ? "🔓 Liberación" : "📥 Solicitud") + '</span>'
+    + '<span class="sol-tipo ' + (s.tipo||"asignacion") + '">' + (s.tipo==="liberacion" ? "🔓 Liberación" : s.tipo==="edicion" ? "✏ Edición" : "📥 Solicitud") + '</span>'
     + '<span class="sol-estado ' + s.estado + '">' + s.estado + '</span>'
     + '</div>'
     + '</div>'
