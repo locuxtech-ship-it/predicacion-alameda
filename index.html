@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -592,7 +592,8 @@ function actualizarStats() {
 function abrirSolicitar(turno) {
   turnoSeleccionado = turno;
   document.getElementById("modal-turno-info").textContent = turno.dia + " · " + turno.horario + " · " + turno.lugar;
-  document.getElementById("modal-nombre").value = "";
+  document.getElementById("modal-p1").value = "";
+  document.getElementById("modal-p2").value = "";
   document.getElementById("modal-solicitar").classList.remove("hidden");
 }
 
