@@ -537,7 +537,7 @@ function enviarNovedad() {
   var btn = document.getElementById("btn-enviar-novedad");
   btn.disabled = true; btn.textContent = "Enviando...";
 
-  apiPost({
+  api({
     action:"registrarNovedad",
     fecha: fecha, publicador: nombre, punto: punto, horario: horario,
     cumplido: cumplido ? cumplido.value : "",
@@ -601,7 +601,7 @@ function confirmarSolicitud() {
   var p2 = document.getElementById("modal-p2").value.trim();
   if (!p1) { toast("Escribe el nombre del Participante 1"); return; }
   if (!p2) { toast("Escribe el nombre del Participante 2"); return; }
-  apiPost({action:"solicitarTurno", persona_1:p1, persona_2:p2, turno_id: String(turnoSeleccionado.id)})
+  api({action:"solicitarTurno", persona_1:p1, persona_2:p2, turno_id: String(turnoSeleccionado.id)})
     .then(function(res){
       cerrarModal("modal-solicitar");
       if (res.ok) {
@@ -660,7 +660,7 @@ function abrirLiberar(turno, btn) {
 function confirmarLiberacion() {
   var nombre = document.getElementById("modal-liberar-nombre").value.trim();
   if (!nombre) { toast("Confirma tu nombre"); return; }
-  apiPost({action:"liberarTurno", nombre:nombre, turno_id: String(turnoALiberar.id)})
+  api({action:"liberarTurno", nombre:nombre, turno_id: String(turnoALiberar.id)})
     .then(function(res){
       cerrarModal("modal-liberar");
       toast(res.ok ? "✓ " + res.mensaje : "Error: " + res.error, 4500);
