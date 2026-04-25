@@ -74,6 +74,10 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .btn-solicitar{width:100%;margin-top:10px;padding:9px;background:var(--teal-l);color:var(--teal-dd);border:1px solid var(--teal);border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:background .15s}
 .btn-solicitar:hover{background:var(--teal-ll)}
 
+.btn-liberar{width:100%;margin-top:10px;padding:9px;background:#FAECE7;color:#993C1D;border:1px solid #F0997B;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:background .15s}
+.btn-liberar:hover{background:#F5C9BB}
+
+
 /* EMPTY / LOADING */
 .empty{padding:48px 16px;text-align:center;color:var(--text3);font-size:14px}
 .empty-icon{font-size:36px;margin-bottom:12px}
@@ -133,6 +137,9 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .sol-estado{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500}
 .sol-estado.pendiente{background:var(--amber-l);color:var(--amber)}
 .sol-estado.aprobado{background:var(--teal-l);color:var(--teal-dd)}
+.sol-tipo{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+.sol-tipo.liberacion{background:#FAECE7;color:#993C1D}
+.sol-tipo.asignacion{background:var(--teal-l);color:var(--teal-dd)}
 .sol-estado.rechazado{background:var(--coral-l);color:var(--coral)}
 .sol-actions{display:flex;gap:6px;margin-top:10px}
 .btn-aprobar{flex:1;padding:8px;background:var(--teal-l);color:var(--teal-dd);border:1px solid var(--teal);border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font)}
@@ -297,6 +304,23 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
   </div>
 </div>
 
+
+<!-- MODAL LIBERAR TURNO -->
+<div class="modal-bg hidden" id="modal-liberar">
+  <div class="modal">
+    <h3>🔓 Liberar turno</h3>
+    <p style="font-size:13px;color:#5F5E5A;margin-bottom:6px" id="modal-liberar-info"></p>
+    <p style="font-size:12px;color:#BA7517;background:#FAEEDA;padding:8px 10px;border-radius:8px;margin-bottom:14px">
+      ⚠ El administrador revisará tu solicitud antes de liberar el turno.
+    </p>
+    <input type="text" id="modal-liberar-nombre" placeholder="Confirma tu nombre completo">
+    <div class="modal-btns">
+      <button class="btn-sec" onclick="cerrarModal('modal-liberar')">Cancelar</button>
+      <button class="btn-teal" style="background:#993C1D" onclick="confirmarLiberacion()">Solicitar liberación</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -427,6 +451,7 @@ function buscarPersona() {
               + '<div class="card-lugar">📍 ' + t.lugar + '</div>'
               + '<div class="card-horario">⏰ ' + t.horario + '</div>'
               + '<div class="card-personas">' + p1 + p2 + '</div>'
+              + '<button class="btn-liberar" onclick=\'abrirLiberar(\' + JSON.stringify(t) + \', this)\'>🔓 Liberar este turno</button>'
               + '</div>';
           }).join("")
         + '</div>';
@@ -519,6 +544,29 @@ function confirmarSolicitud() {
     }).catch(function(){ toast("Sin conexión"); });
 }
 
+
+// ── LIBERAR TURNO ──────────────────────────────────────────
+var turnoALiberar = null;
+function abrirLiberar(turno, btn) {
+  turnoALiberar = turno;
+  document.getElementById("modal-liberar-info").textContent =
+    turno.dia + " · " + turno.horario + " · " + turno.lugar;
+  // Pre-fill with the name shown in search
+  var searchVal = document.getElementById("search-nombre").value.trim();
+  document.getElementById("modal-liberar-nombre").value = searchVal;
+  document.getElementById("modal-liberar").classList.remove("hidden");
+}
+
+function confirmarLiberacion() {
+  var nombre = document.getElementById("modal-liberar-nombre").value.trim();
+  if (!nombre) { toast("Confirma tu nombre"); return; }
+  apiPost({action:"liberarTurno", nombre:nombre, turno_id: String(turnoALiberar.id)})
+    .then(function(res){
+      cerrarModal("modal-liberar");
+      toast(res.ok ? "✓ " + res.mensaje : "Error: " + res.error, 4500);
+    }).catch(function(){ toast("Sin conexión. Intenta de nuevo."); });
+}
+
 // ── ADMIN ──────────────────────────────────────────────────
 function abrirAdmin() {
   if (adminClave) { showScreen("admin", null); cargarSolicitudes(); return; }
@@ -575,7 +623,10 @@ function solCard(s) {
   return '<div class="sol-card">'
     + '<div style="display:flex;justify-content:space-between;align-items:center">'
     + '<span class="sol-nombre">' + s.nombre + '</span>'
+    + '<div style="display:flex;gap:6px;align-items:center">'
+    + '<span class="sol-tipo ' + (s.tipo||"asignacion") + '">' + (s.tipo==="liberacion" ? "🔓 Liberación" : "📥 Solicitud") + '</span>'
     + '<span class="sol-estado ' + s.estado + '">' + s.estado + '</span>'
+    + '</div>'
     + '</div>'
     + '<div class="sol-detalle">' + s.dia + ' · ' + s.horario + '</div>'
     + '<div class="sol-detalle" style="color:#1D9E75">📍 ' + s.lugar + '</div>'
