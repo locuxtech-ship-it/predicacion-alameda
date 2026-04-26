@@ -333,6 +333,22 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
   </div>
 </div>
 
+
+<!-- MODAL GRACIAS -->
+<div class="modal-bg hidden" id="modal-gracias" onclick="cerrarModal('modal-gracias')">
+  <div class="modal" style="text-align:center;padding:28px 24px">
+    <div style="font-size:48px;margin-bottom:12px">🙏</div>
+    <h3 style="font-size:18px;margin-bottom:10px;color:#0F6E56">¡Gracias, hermano/a <span id="gracias-nombre"></span>!</h3>
+    <p style="font-size:14px;color:#5F5E5A;line-height:1.6;margin-bottom:20px">
+      Tu reporte ha sido enviado correctamente.<br>
+      Jehovah bendiga tu servicio en la predicación.
+    </p>
+    <button class="btn-primary" style="max-width:200px;margin:0 auto" onclick="cerrarModal('modal-gracias')">
+      ¡De nada! 😊
+    </button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -523,46 +539,61 @@ function buscarPersona() {
 
 // ── SCREEN NOVEDAD ─────────────────────────────────────────
 function enviarNovedad() {
-  var nombre = document.getElementById("nov-nombre").value.trim();
-  var fecha  = document.getElementById("nov-fecha").value;
-  var punto  = document.getElementById("nov-punto").value;
-  var horario= document.getElementById("nov-horario").value;
-  var cumplido = document.querySelector('input[name="cumplido"]:checked');
-  var conv   = document.getElementById("nov-conversaciones").value;
-  var curso  = document.querySelector('input[name="curso"]:checked');
-  var detalle= document.getElementById("nov-detalle").value.trim();
+  var nombre  = document.getElementById("nov-nombre").value.trim();
+  var fecha   = document.getElementById("nov-fecha").value;
+  var punto   = document.getElementById("nov-punto").value;
+  var horario = document.getElementById("nov-horario").value;
+  var cumplido= document.querySelector('input[name="cumplido"]:checked');
+  var conv    = document.getElementById("nov-conversaciones").value;
+  var curso   = document.querySelector('input[name="curso"]:checked');
+  var detalle = document.getElementById("nov-detalle").value.trim();
 
   if (!nombre || !fecha || !punto) { toast("Completa los campos obligatorios (*)"); return; }
 
   var btn = document.getElementById("btn-enviar-novedad");
   btn.disabled = true; btn.textContent = "Enviando...";
 
-  api({
-    action:"registrarNovedad",
-    fecha: fecha, publicador: nombre, punto: punto, horario: horario,
-    cumplido: cumplido ? cumplido.value : "",
-    conversaciones: conv || "0",
-    curso_biblico: curso ? curso.value : "",
-    detalle: detalle
-  }).then(function(res){
-    btn.disabled = false; btn.textContent = "Enviar registro";
-    if (res.ok) {
-      toast("✓ Novedad registrada correctamente");
-      document.getElementById("nov-nombre").value = "";
-      document.getElementById("nov-fecha").value = "";
-      document.getElementById("nov-punto").value = "";
-      document.getElementById("nov-horario").value = "";
-      document.getElementById("nov-conversaciones").value = "";
-      document.getElementById("nov-detalle").value = "";
-      document.querySelectorAll('input[name="cumplido"], input[name="curso"]').forEach(function(r){ r.checked = false; });
-      novedadesCache = [];
-    } else {
-      toast("Error: " + res.error);
-    }
-  }).catch(function(){
-    btn.disabled = false; btn.textContent = "Enviar registro";
-    toast("Sin conexión. Intenta de nuevo.");
-  });
+  // Usar fetch con URL y encodeURIComponent para manejar tildes y caracteres especiales
+  var params = [
+    "action=registrarNovedad",
+    "fecha="          + encodeURIComponent(fecha),
+    "publicador="     + encodeURIComponent(nombre),
+    "punto="          + encodeURIComponent(punto),
+    "horario="        + encodeURIComponent(horario),
+    "cumplido="       + encodeURIComponent(cumplido ? cumplido.value : ""),
+    "conversaciones=" + encodeURIComponent(conv || "0"),
+    "curso_biblico="  + encodeURIComponent(curso ? curso.value : ""),
+    "detalle="        + encodeURIComponent(detalle)
+  ].join("&");
+
+  fetch(API + "?" + params)
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+      btn.disabled = false; btn.textContent = "Enviar registro";
+      if (res.ok) {
+        mostrarGracias(nombre);
+        document.getElementById("nov-nombre").value = "";
+        document.getElementById("nov-fecha").valueAsDate = new Date();
+        document.getElementById("nov-punto").value = "";
+        document.getElementById("nov-horario").value = "";
+        document.getElementById("nov-conversaciones").value = "";
+        document.getElementById("nov-detalle").value = "";
+        document.querySelectorAll('input[name="cumplido"], input[name="curso"]').forEach(function(r){ r.checked = false; });
+        novedadesCache = [];
+      } else {
+        toast("Error: " + (res.error || "desconocido"));
+      }
+    }).catch(function(){
+      btn.disabled = false; btn.textContent = "Enviar registro";
+      toast("Sin conexión. Intenta de nuevo.");
+    });
+}
+
+function mostrarGracias(nombre) {
+  var primerNombre = nombre.split(" ")[0];
+  document.getElementById("gracias-nombre").textContent = primerNombre;
+  document.getElementById("modal-gracias").classList.remove("hidden");
+  setTimeout(function(){ cerrarModal("modal-gracias"); }, 5000);
 }
 
 // ── SCREEN HISTORIAL ───────────────────────────────────────
