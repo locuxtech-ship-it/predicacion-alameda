@@ -285,7 +285,10 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
       <div class="stat"><div class="stat-label">Turnos asignados</div><div class="stat-value" id="st-asig">—</div></div>
       <div class="stat"><div class="stat-label">Turnos disponibles</div><div class="stat-value teal" id="st-disp">—</div></div>
     </div>
-    <div class="section-label">Últimas novedades registradas</div>
+    <div style="padding:0 16px 8px;display:flex;gap:8px;align-items:center">
+      <span style="font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.05em;flex:1">Últimas 30 novedades</span>
+      <button class="admin-btn" style="background:var(--teal-l);color:var(--teal-dd);font-size:12px" onclick="cargarHistorial()">↻ Actualizar</button>
+    </div>
     <div class="cards" id="lista-historial"><div class="loader"><div class="spinner"></div></div></div>
   </div>
 
@@ -673,18 +676,55 @@ function mostrarGracias(nombre) {
 
 // ── SCREEN HISTORIAL ───────────────────────────────────────
 function cargarHistorial() {
-  api({action:"getTurnos"}).then(function(res){
-    if (res.ok) {
-      var asig = res.data.filter(function(t){ return t.estado==="asignado"; }).length;
-      var disp = res.data.filter(function(t){ return t.estado==="disponible"; }).length;
-      document.getElementById("st-asig").textContent = asig;
-      document.getElementById("st-disp").textContent = disp;
-    }
-  });
-  // Mostrar novedades recientes desde caché o generar muestra
+  // Stats de turnos
+  if (todosLosTurnos.length > 0) {
+    actualizarStats();
+  } else {
+    api({action:"getTurnos"}).then(function(res){
+      if (res.ok) {
+        todosLosTurnos = res.data;
+        actualizarStats();
+      }
+    });
+  }
+
+  // Cargar novedades reales desde el API
   var cont = document.getElementById("lista-historial");
-  cont.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>Los registros de novedades se muestran aquí después de enviarlos</div>';
-  document.getElementById("st-total").textContent = "1228+";
+  cont.innerHTML = '<div class="loader"><div class="spinner"></div></div>';
+
+  api({action:"getNovedades", clave:adminClave, limite:"30"})
+    .then(function(res){
+      if (!res.ok) {
+        cont.innerHTML = '<div class="empty"><div class="empty-icon">🔒</div>Acceso restringido al administrador</div>';
+        return;
+      }
+      document.getElementById("st-total").textContent = res.total.toLocaleString();
+      if (!res.data.length) {
+        cont.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>No hay novedades registradas aún</div>';
+        return;
+      }
+      cont.innerHTML = res.data.map(function(n){
+        var cumplIcon = n.cumplido === "Sí" || n.cumplido === "Si" ? "✅" :
+                        n.cumplido === "No" ? "❌" :
+                        n.cumplido === "Parcial" ? "⚠️" : "—";
+        var conv = n.conversaciones && n.conversaciones !== "0" ? " · 💬 " + n.conversaciones : "";
+        var curso = (n.curso_biblico === "Sí" || n.curso_biblico === "Si") ? " · 📖 Curso" : "";
+        var detalle = n.detalle && n.detalle !== "" && n.detalle !== "undefined"
+          ? '<div style="font-size:12px;color:var(--text2);margin-top:4px;font-style:italic">"' + n.detalle + '"</div>'
+          : "";
+        return '<div class="hist-card">'
+          + '<div class="hist-top">'
+          + '<span class="hist-nombre">' + n.publicador + '</span>'
+          + '<span class="hist-fecha">' + n.fecha + '</span>'
+          + '</div>'
+          + '<div class="hist-lugar">📍 ' + n.punto + ' · ⏰ ' + n.horario + '</div>'
+          + '<div class="hist-detalle">' + cumplIcon + ' ' + (n.cumplido||"—") + conv + curso + '</div>'
+          + detalle
+          + '</div>';
+      }).join("");
+    }).catch(function(){
+      cont.innerHTML = '<div class="empty">Sin conexión. Intenta de nuevo.</div>';
+    });
 }
 
 function actualizarStats() {
