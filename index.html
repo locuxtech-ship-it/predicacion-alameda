@@ -141,6 +141,13 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 
 /* HISTORIAL CARDS */
 .hist-card{background:var(--gray-l);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px}
+
+.cust-card{background:var(--white);border:1px solid var(--gray-ll);border-left:3px solid var(--teal);border-radius:var(--radius);padding:14px;margin-bottom:8px}
+.cust-punto{font-weight:600;font-size:15px;color:var(--text);margin-bottom:6px}
+.cust-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);margin-top:4px}
+.cust-row a{color:var(--teal-d);font-weight:500;text-decoration:none}
+.cust-row a:hover{text-decoration:underline}
+
 .hist-top{display:flex;justify-content:space-between}
 .hist-nombre{font-weight:500;font-size:14px}
 .hist-fecha{font-size:12px;color:var(--text3)}
@@ -196,6 +203,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
   <nav class="nav" id="main-nav">
     <button class="nav-btn active" onclick="showScreen('turnos',this)"><span class="nav-icon">🗓</span>Turnos</button>
     <button class="nav-btn" onclick="showScreen('buscar',this)"><span class="nav-icon">🔍</span>Mi turno</button>
+    <button class="nav-btn" onclick="showScreen('custodia',this)"><span class="nav-icon">📦</span>Custodia</button>
     <button class="nav-btn" onclick="showScreen('novedad',this)"><span class="nav-icon">📝</span>Novedad</button>
     <button class="nav-btn admin-tab" style="display:none" onclick="showScreen('historial',this)"><span class="nav-icon">📊</span>Historial</button>
     <button class="nav-btn admin-tab" style="display:none" onclick="showScreen('estadisticas',this)"><span class="nav-icon">🏆</span>Stats</button>
@@ -221,34 +229,59 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
     <div id="resultado-busqueda" class="empty"><div class="empty-icon">🔍</div>Escribe tu nombre para ver tus turnos asignados</div>
   </div>
 
+
+  <!-- SCREEN: CUSTODIA -->
+  <div id="screen-custodia" class="screen">
+    <div class="search-wrap" style="padding-bottom:12px">
+      <p style="font-size:13px;color:var(--text2);line-height:1.5">
+        Aquí encuentras dónde guardar el exhibidor después de tu turno y con quién comunicarte si no hay nadie que lo reciba.
+      </p>
+    </div>
+    <div class="section-label">Puntos y sus custodios</div>
+    <div class="cards" id="lista-custodia">
+      <div class="loader"><div class="spinner"></div></div>
+    </div>
+  </div>
+
   <!-- SCREEN: NOVEDAD -->
   <div id="screen-novedad" class="screen">
     <div class="form-wrap">
       <div class="form-title">📝 Registrar novedad del turno</div>
       <div class="form-group">
-        <label>Nombre del publicador *</label>
-        <input type="text" id="nov-nombre" placeholder="Tu nombre completo">
-      </div>
-      <div class="form-group">
         <label>Fecha del turno *</label>
         <input type="date" id="nov-fecha">
       </div>
       <div class="form-group">
-        <label>Punto exhibidor *</label>
-        <select id="nov-punto">
-          <option value="">Cargando puntos...</option>
+        <label>Día de la semana *</label>
+        <select id="nov-dia" onchange="onNovDiaCambia()">
+          <option value="">Selecciona el día...</option>
+          <option>Lunes</option>
+          <option>Martes</option>
+          <option>Miercoles</option>
+          <option>Jueves</option>
+          <option>Viernes</option>
+          <option>Sábado</option>
+          <option>Domingo</option>
         </select>
       </div>
       <div class="form-group">
-        <label>Horario</label>
-        <select id="nov-horario">
-          <option value="">Selecciona horario...</option>
-          <option>6:00 - 8:00 AM</option>
-          <option>6:30 - 8:30 AM</option>
-          <option>10:00 AM - 12:00 PM</option>
-          <option>4:00 - 6:00 PM</option>
-          <option>6:00 - 8:00 PM</option>
+        <label>Punto exhibidor *</label>
+        <select id="nov-punto" onchange="onNovPuntoCambia()">
+          <option value="">Primero selecciona el día...</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label>Horario *</label>
+        <select id="nov-horario" onchange="onNovHorarioCambia()">
+          <option value="">Primero selecciona el punto...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Publicador</label>
+        <div id="nov-nombre-wrap" style="padding:10px 12px;background:var(--gray-l);border:1px solid var(--gray-ll);border-radius:var(--radius-sm);font-size:14px;color:var(--text3);min-height:42px">
+          Se completará automáticamente al seleccionar día, punto y horario
+        </div>
+        <input type="hidden" id="nov-nombre">
       </div>
       <div class="form-group">
         <label>¿Se cumplió el turno?</label>
@@ -511,6 +544,7 @@ function showScreen(id, btn) {
   document.getElementById("screen-" + id).classList.add("active");
   if (btn) btn.classList.add("active");
   if (id === "historial" && novedadesCache.length === 0) cargarHistorial();
+  if (id === "custodia") cargarCustodia();
   if (id === "estadisticas") cargarEstadisticas();
 }
 
@@ -626,7 +660,9 @@ function enviarNovedad() {
   var curso   = document.querySelector('input[name="curso"]:checked');
   var detalle = document.getElementById("nov-detalle").value.trim();
 
-  if (!nombre || !fecha || !punto) { toast("Completa los campos obligatorios (*)"); return; }
+  var dia = document.getElementById("nov-dia").value;
+  if (!fecha || !dia || !punto || !horario) { toast("Selecciona fecha, día, punto y horario"); return; }
+  if (!nombre) { toast("No se encontró participante para este turno. Verifica el día y punto seleccionados."); return; }
 
   var btn = document.getElementById("btn-enviar-novedad");
   btn.disabled = true; btn.textContent = "Enviando...";
@@ -652,10 +688,16 @@ function enviarNovedad() {
         mostrarGracias(nombre);
         document.getElementById("nov-nombre").value = "";
         document.getElementById("nov-fecha").valueAsDate = new Date();
-        document.getElementById("nov-punto").value = "";
-        document.getElementById("nov-horario").value = "";
+        document.getElementById("nov-dia").value = "";
+        document.getElementById("nov-punto").innerHTML = '<option value="">Primero selecciona el día...</option>';
+        document.getElementById("nov-horario").innerHTML = '<option value="">Primero selecciona el punto...</option>';
         document.getElementById("nov-conversaciones").value = "";
         document.getElementById("nov-detalle").value = "";
+        var wrap = document.getElementById("nov-nombre-wrap");
+        wrap.textContent = "Se completará automáticamente al seleccionar día, punto y horario";
+        wrap.style.color = "var(--text3)";
+        wrap.style.background = "var(--gray-l)";
+        wrap.style.borderColor = "var(--gray-ll)";
         document.querySelectorAll('input[name="cumplido"], input[name="curso"]').forEach(function(r){ r.checked = false; });
         novedadesCache = [];
       } else {
@@ -786,6 +828,128 @@ function confirmarSolicitud() {
 }
 
 
+
+
+
+// ── CUSTODIA ────────────────────────────────────────────────
+var custodiaCache = [];
+
+function cargarCustodia() {
+  if (custodiaCache.length > 0) { renderCustodia(custodiaCache); return; }
+  api({action:"getCustodia"}).then(function(res){
+    if (!res.ok) {
+      document.getElementById("lista-custodia").innerHTML = '<div class="empty">Error cargando datos</div>';
+      return;
+    }
+    custodiaCache = res.data;
+    renderCustodia(res.data);
+  }).catch(function(){
+    document.getElementById("lista-custodia").innerHTML = '<div class="empty">Sin conexión</div>';
+  });
+}
+
+function renderCustodia(lista) {
+  var cont = document.getElementById("lista-custodia");
+  cont.innerHTML = lista.map(function(c){
+    return '<div class="cust-card">'
+      + '<div class="cust-punto">📍 ' + c.punto + '</div>'
+      + '<div class="cust-row">🏠 ' + c.lugar + '</div>'
+      + '<div class="cust-row">👤 ' + c.contacto
+      + ' &nbsp;<a href="tel:' + c.cel + '">📞 ' + c.cel + '</a></div>'
+      + '</div>';
+  }).join("");
+}
+
+// ── AUTOCOMPLETADO FORMULARIO NOVEDAD ──────────────────────
+var turnosNovedad = []; // cache de turnos para el formulario
+
+function onNovDiaCambia() {
+  var dia = document.getElementById("nov-dia").value;
+  var selPunto = document.getElementById("nov-punto");
+  var selHorario = document.getElementById("nov-horario");
+  var wrap = document.getElementById("nov-nombre-wrap");
+  document.getElementById("nov-nombre").value = "";
+  selHorario.innerHTML = '<option value="">Primero selecciona el punto...</option>';
+  wrap.textContent = "Se completará automáticamente al seleccionar día, punto y horario";
+  wrap.style.color = "var(--text3)";
+
+  if (!dia) {
+    selPunto.innerHTML = '<option value="">Primero selecciona el día...</option>';
+    return;
+  }
+
+  // Filtrar puntos disponibles para ese día desde todosLosTurnos
+  var puntosDelDia = [];
+  todosLosTurnos.forEach(function(t){
+    if (t.dia === dia && t.estado === "asignado" && puntosDelDia.indexOf(t.lugar) === -1) {
+      puntosDelDia.push(t.lugar);
+    }
+  });
+
+  if (!puntosDelDia.length) {
+    selPunto.innerHTML = '<option value="">Sin turnos asignados este día</option>';
+    return;
+  }
+
+  selPunto.innerHTML = '<option value="">Selecciona el punto...</option>'
+    + puntosDelDia.map(function(p){ return '<option value="' + p + '">' + p + '</option>'; }).join("");
+}
+
+function onNovPuntoCambia() {
+  var dia   = document.getElementById("nov-dia").value;
+  var punto = document.getElementById("nov-punto").value;
+  var selHorario = document.getElementById("nov-horario");
+  var wrap = document.getElementById("nov-nombre-wrap");
+  document.getElementById("nov-nombre").value = "";
+  wrap.textContent = "Se completará automáticamente al seleccionar el horario";
+  wrap.style.color = "var(--text3)";
+
+  if (!dia || !punto) return;
+
+  // Filtrar horarios disponibles para ese día y punto
+  var horariosDelPunto = [];
+  todosLosTurnos.forEach(function(t){
+    if (t.dia === dia && t.lugar === punto && t.estado === "asignado"
+        && horariosDelPunto.indexOf(t.horario) === -1) {
+      horariosDelPunto.push(t.horario);
+    }
+  });
+
+  selHorario.innerHTML = '<option value="">Selecciona el horario...</option>'
+    + horariosDelPunto.map(function(h){ return '<option value="' + h + '">' + h + '</option>'; }).join("");
+}
+
+function onNovHorarioCambia() {
+  var dia     = document.getElementById("nov-dia").value;
+  var punto   = document.getElementById("nov-punto").value;
+  var horario = document.getElementById("nov-horario").value;
+  var wrap    = document.getElementById("nov-nombre-wrap");
+  var hidden  = document.getElementById("nov-nombre");
+
+  if (!dia || !punto || !horario) return;
+
+  // Buscar el turno exacto y extraer persona_1
+  var turnoEncontrado = null;
+  todosLosTurnos.forEach(function(t){
+    if (t.dia === dia && t.lugar === punto && t.horario === horario && t.estado === "asignado") {
+      turnoEncontrado = t;
+    }
+  });
+
+  if (turnoEncontrado && turnoEncontrado.persona_1) {
+    hidden.value = turnoEncontrado.persona_1;
+    wrap.innerHTML = '<span style="color:var(--teal-d);font-weight:500">✓ ' + turnoEncontrado.persona_1 + '</span>'
+      + (turnoEncontrado.persona_2 ? '<span style="color:var(--text2);font-size:12px"> · Compañero/a: ' + turnoEncontrado.persona_2 + '</span>' : '');
+    wrap.style.background = "var(--teal-l)";
+    wrap.style.borderColor = "var(--teal)";
+  } else {
+    hidden.value = "";
+    wrap.textContent = "No se encontró participante asignado para este turno";
+    wrap.style.color = "var(--amber)";
+    wrap.style.background = "var(--amber-l)";
+    wrap.style.borderColor = "var(--amber-ll)";
+  }
+}
 
 
 // ── ESTADÍSTICAS ───────────────────────────────────────────
