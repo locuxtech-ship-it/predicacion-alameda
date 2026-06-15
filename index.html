@@ -381,6 +381,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
       <span style="font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.05em">Solicitudes de turnos</span>
       <div style="display:flex;gap:8px">
         <button onclick="abrirCrearTurno()" style="font-size:12px;color:var(--teal-dd);background:var(--teal-l);border:1px solid var(--teal);border-radius:20px;padding:4px 12px;cursor:pointer;font-family:var(--font)">＋ Nuevo turno</button>
+        <button onclick="abrirInformeTurnos()" style="font-size:12px;color:#993C1D;background:#FAECE7;border:1px solid #F0997B;border-radius:20px;padding:4px 12px;cursor:pointer;font-family:var(--font)">📄 Informe</button>
         <button onclick="cerrarSesionAdmin()" style="font-size:12px;color:var(--coral);background:none;border:none;cursor:pointer;font-family:var(--font)">🔒 Cerrar sesión</button>
       </div>
     </div>
@@ -419,6 +420,22 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 
 
 
+
+
+<!-- MODAL INFORME TURNOS -->
+<div class="modal-bg hidden" id="modal-informe">
+  <div class="modal">
+    <h3>📄 Informe de actividad</h3>
+    <p style="font-size:13px;color:#5F5E5A;margin-bottom:14px">
+      Genera un informe actualizado con todos los turnos asignados por punto y un resumen general.
+    </p>
+    <div id="informe-resultado" style="display:none;margin-bottom:14px"></div>
+    <div class="modal-btns">
+      <button class="btn-sec" onclick="cerrarModal('modal-informe')">Cerrar</button>
+      <button class="btn-teal" id="btn-generar-informe" onclick="generarInformeTurnos()">Generar informe</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL CREAR TURNO -->
 <div class="modal-bg hidden" id="modal-crear-turno">
@@ -1025,6 +1042,54 @@ function confirmarSolicitud() {
 
 
 
+
+
+
+// ── INFORME TURNOS (ADMIN) ─────────────────────────────────
+function abrirInformeTurnos() {
+  document.getElementById("informe-resultado").style.display = "none";
+  document.getElementById("informe-resultado").innerHTML = "";
+  var btn = document.getElementById("btn-generar-informe");
+  btn.textContent = "Generar informe";
+  btn.disabled = false;
+  document.getElementById("modal-informe").classList.remove("hidden");
+}
+
+function generarInformeTurnos() {
+  var btn = document.getElementById("btn-generar-informe");
+  btn.disabled = true;
+  btn.textContent = "Generando...";
+
+  api({action:"generarInformeTurnos", clave:adminClave})
+    .then(function(res){
+      btn.disabled = false;
+      btn.textContent = "Generar informe";
+      if (!res.ok) { toast("Error: " + res.error); return; }
+
+      var r = res.resumen;
+      var result = document.getElementById("informe-resultado");
+      result.style.display = "block";
+      result.innerHTML =
+        '<div style="background:#E1F5EE;border-radius:8px;padding:12px;margin-bottom:12px;font-size:13px;color:#085041">'
+        + '<div style="font-weight:600;margin-bottom:6px">✓ Informe generado · ' + r.fecha + '</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">'
+        + '<span>📍 ' + r.puntos + ' puntos activos</span>'
+        + '<span>✅ ' + r.asignados + ' turnos asignados</span>'
+        + '<span>🟢 ' + r.disponibles + ' disponibles</span>'
+        + '<span>👥 ' + r.participantes + ' participantes</span>'
+        + '</div></div>'
+        + '<a href="' + res.pdf_url + '" target="_blank" '
+        + 'style="display:block;padding:11px;background:#0F6E56;color:white;text-align:center;border-radius:8px;text-decoration:none;font-weight:500;margin-bottom:8px;font-size:14px">'
+        + '⬇ Descargar PDF</a>'
+        + '<a href="' + res.xlsx_url + '" target="_blank" '
+        + 'style="display:block;padding:11px;background:#1D9E75;color:white;text-align:center;border-radius:8px;text-decoration:none;font-weight:500;font-size:14px">'
+        + '⬇ Descargar Excel</a>';
+    }).catch(function(){
+      btn.disabled = false;
+      btn.textContent = "Generar informe";
+      toast("Sin conexión. Intenta de nuevo.");
+    });
+}
 
 
 // ── CREAR TURNO (ADMIN) ────────────────────────────────────
